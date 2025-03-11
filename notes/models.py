@@ -1,9 +1,5 @@
 from django.db import models
-
-class User(models.Model):
-    hash = models.CharField(max_length=32)
-    name = models.CharField(max_length=100)
-
+from django.contrib.auth.models import User
 
 class Note(models.Model):
     name = models.CharField(max_length=100)
