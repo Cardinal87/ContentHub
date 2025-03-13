@@ -1,54 +1,65 @@
 from django.shortcuts import render
 from django.contrib.auth.models import User
-from django.http import HttpResponse, HttpResponseBadRequest, HttpRequest
+from django.http import HttpResponse, JsonResponse, HttpRequest
 from django.views.decorators.http import *  
 from .db_client import NoteRepo, UserRepo
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
+from django.contrib.auth import aauthenticate, alogin, logout
+from django.shortcuts import redirect, render
+from django.contrib.auth.decorators import login_required
 
 import json
 
-@require_GET
-def get_auth_page(request):
+
+def get_auth_page(request: HttpRequest):
     return HttpResponse("")
 
-@require_GET
-def get_notes_page():
+@login_required
+def get_main_page(request: HttpRequest):
     return HttpResponse("")
 
 
 
-'''api method for adding users'''
+#api method for adding users
 @require_POST
-def add_user(request: HttpRequest):
+async def add_user(request: HttpRequest):
     try:
         decoded = request.body.decode()
         kwargs = json.loads(decoded)
         repo = UserRepo()
-        repo.create(kwargs)
-        return HttpResponse("User added")
+        user = repo.create(kwargs)
+        await alogin(request, user)
+        return redirect('')
     except Exception as ex:
-        return HttpResponseBadRequest(f"{str(ex)}")
+        return JsonResponse({"error": f"{ex}"}, status=400)
 
 
 
-'''api method for authorization'''
-@require_GET
-def authorize(request: HttpRequest):
+#api method for authorization
+@require_POST
+async def authorize(request: HttpRequest):
     try:
         decoded = request.body.decode()
         kwargs = json.loads(decoded)
         
-        user_repo = UserRepo()
-        user = user_repo.get_by_name(kwargs["username"])
-        res = user.check_password(kwargs["password"])
-        if not res:
-            raise ValidationError("incorrect password")
-        notes_repo = NoteRepo()
-        notes = notes_repo.get_user_notes(user)
-        return HttpResponse(notes)
+        user = await aauthenticate(request, username=kwargs["username"], password=kwargs["password"] )
+        
+        if user is not None: 
+            await alogin(request, user)
+            return redirect('')
+        else:
+            JsonResponse({"error": "invalid password or user"}, status=400)
         
     except ValidationError:    
-        return HttpResponseBadRequest("Invalid password or login")
+        return JsonResponse({"error": "invalid password or user"}, status=400)
     except Exception as ex:
-        return HttpResponseBadRequest(f"{ex}")
+        return JsonResponse({"error": f"{ex}"}, status=400)
+
+
+# logout method
+def logout(request: HttpRequest):
+    logout(request)
+    return redirect('login')
+
+
 

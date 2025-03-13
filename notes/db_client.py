@@ -7,10 +7,11 @@ class UserRepo():
     allowed_attrs = ["username", "password"]
     
     def create(self, kwargs):
-        User.objects.create_user(
+        user = User.objects.create_user(
             username=kwargs.get("username"),
             password=kwargs.get("password"),
         )
+        return user
         
     def get_all(self):
         return User.objects.all()
@@ -39,11 +40,12 @@ class UserRepo():
 class NoteRepo():
     allowed_attrs = ["text", "name"]
     def create(self, kwargs):
-        Note.objects.create_user(
+        note = Note.objects.create(
             name=kwargs.get("name"),
             text=kwargs.get("text"),
             user=kwargs.get("user")
         )
+        return note
     
     def get_all(self):
         return Note.objects.all()
