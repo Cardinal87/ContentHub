@@ -20,7 +20,7 @@ SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_AGE = 86400
 
 #auth_settings
-LOGIN_URL = "login"
+LOGIN_URL = "authpage/"
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
