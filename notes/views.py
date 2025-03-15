@@ -9,21 +9,6 @@ from django.shortcuts import redirect, render
 from django.contrib.auth.decorators import login_required
 import json
 
-#returns page for authorization
-def get_auth_page(request: HttpRequest):
-    return render(request, "html\login.html")
-
-#returns page for creating new user
-def get_create_user_page(request: HttpRequest):
-    return render(request, "html\create_user.html")
-
-
-@login_required
-def get_main_page(request: HttpRequest):
-    return HttpResponse("")
-
-
-
 
 #api method for adding users
 @require_POST
@@ -34,7 +19,7 @@ async def add_user(request: HttpRequest):
         repo = UserRepo()
         user = repo.create(kwargs)
         await alogin(request, user)
-        return redirect('/')
+        return JsonResponse({"message": "success"}, status=200)
     except Exception as ex:
         return JsonResponse({"error": str(ex)}, status=400)
 
@@ -51,9 +36,9 @@ async def authorize(request: HttpRequest):
         
         if user is not None: 
             await alogin(request, user)
-            return redirect('/')
+            return JsonResponse({"message": "success"}, status=200)
         else:
-            JsonResponse({"error": "invalid password or user"}, status=400)
+            return JsonResponse({"error": "invalid password or user"}, status=400)
         
     except ValidationError:    
         return JsonResponse({"error": "invalid password or user"}, status=400)
