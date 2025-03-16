@@ -6,9 +6,16 @@ from .db_client import NoteRepo, UserRepo
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.contrib.auth import aauthenticate, alogin, logout
 from django.shortcuts import redirect, render
-from django.contrib.auth.decorators import login_required
+
 import json
 
+
+#checking authorization
+def check_auth(request: HttpRequest):
+    if request.user.is_authenticated:
+        return JsonResponse({"message": "authenticated"}, status=200)
+    else:
+        return JsonResponse({"error": "unauthorized"}, status=401)
 
 #api method for adding users
 @require_POST
@@ -49,14 +56,15 @@ async def authorize(request: HttpRequest):
 # logout method
 def logout(request: HttpRequest):
     logout(request)
-    return redirect('login')
+    return JsonResponse({"message": "successed"}, status=200)
 
 
 #api method for creating notes
-@login_required
 @require_POST
 def create_note(request: HttpRequest):
     try:
+        if not request.user.is_authenticated:
+            return JsonResponse({"error": "unauthorized"}, status=401)
         decoded = request.body.decode()
         kwargs = json.loads(decoded)
         name = kwargs["name"]
@@ -69,10 +77,11 @@ def create_note(request: HttpRequest):
         return JsonResponse({"error": str(ex)}, status=400)
 
 #api method for deleting notes
-@login_required
 @require_POST
 def delete_note(request: HttpRequest):
     try:
+        if not request.user.is_authenticated:
+            return JsonResponse({"error": "unauthorized"}, status=401)
         decoded = request.body.decode()
         kwargs = json.loads(decoded)
         note_repo = NoteRepo()
