@@ -11,20 +11,13 @@ import { ProtectedRoute } from "./components/ProtectedRoute";
 function App() {
   return (
     <>
-      <AuthProvider>
-        <Routes>
-          <Route
-            path="/"
-            element={
-              <ProtectedRoute>
-                <MainPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route path="/signup" element={<SignUpPage />} />
-          <Route path="/login" element={<LoginPage />} />
-        </Routes>
-      </AuthProvider>
+      {/*<AuthProvider>*/}
+      <Routes>
+        <Route path="/" element={<MainPage />} />
+        <Route path="/signup" element={<SignUpPage />} />
+        <Route path="/login" element={<LoginPage />} />
+      </Routes>
+      {/*</AuthProvider>*/}
     </>
   );
 }
