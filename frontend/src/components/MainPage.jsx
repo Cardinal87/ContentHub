@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   DeleteIcon,
   EditIcon,
@@ -8,6 +9,7 @@ import {
   RightArrow,
   SettingsIcon,
 } from "./Icons";
+import { replace } from "react-router-dom";
 
 function NoteText() {
   return (
@@ -104,10 +106,27 @@ function ProfileButton() {
 }
 
 function LogoutButton() {
+  const navigate = useNavigate();
+
+  async function logout() {
+    try {
+      const resp = await fetch("http://localhost:8000/api/logout/", {
+        method: "POST",
+        credentials: "include",
+      });
+      if (resp.ok) {
+        navigate("login/", { replace: true });
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
   return (
     <button
       className="flex text-gray-100 text-0.5xl items-center hover:bg-gray-700 
     transition-colors duration-300 justify-start py-2 pr-1 pl-0 rounded-lg mx-3"
+      onClick={logout}
     >
       <LogoutIcon classes={"mr-3"} />
       Logout

@@ -6,7 +6,8 @@ from .db_client import NoteRepo, UserRepo
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.contrib.auth import aauthenticate, alogin, logout
 from django.shortcuts import redirect, render
-
+from django.db import IntegrityError
+from asgiref.sync import sync_to_async
 import json
 
 
@@ -24,11 +25,13 @@ async def add_user(request: HttpRequest):
         decoded = request.body.decode()
         kwargs = json.loads(decoded)
         repo = UserRepo()
-        user = repo.create(kwargs)
+        user = await sync_to_async(repo.create)(kwargs)
         await alogin(request, user)
         return JsonResponse({"message": "success"}, status=200)
+    except IntegrityError as ex:
+        return JsonResponse({"error": "username is already taken"}, status=400)
     except Exception as ex:
-        return JsonResponse({"error": str(ex)}, status=400)
+        return JsonResponse({"error": str(ex)}, status=500)
 
 
 
@@ -45,16 +48,17 @@ async def authorize(request: HttpRequest):
             await alogin(request, user)
             return JsonResponse({"message": "success"}, status=200)
         else:
-            return JsonResponse({"error": "invalid password or user"}, status=400)
+            return JsonResponse({"error": "invalid password or username"}, status=400)
         
     except ValidationError:    
-        return JsonResponse({"error": "invalid password or user"}, status=400)
+        return JsonResponse({"error": "invalid password or username"}, status=400)
     except Exception as ex:
-        return JsonResponse({"error": str(ex)}, status=400)
+        return JsonResponse({"error": str(ex)}, status=500)
 
 
 # logout method
-def logout(request: HttpRequest):
+@require_POST
+def logout_user(request: HttpRequest):
     logout(request)
     return JsonResponse({"message": "successed"}, status=200)
 
@@ -74,7 +78,7 @@ def create_note(request: HttpRequest):
         note_repo.create(name = name, text = text, user = user)
         return JsonResponse({"error": "note added"}, status=200)
     except Exception as ex:
-        return JsonResponse({"error": str(ex)}, status=400)
+        return JsonResponse({"error": str(ex)}, status=500)
 
 #api method for deleting notes
 @require_POST
@@ -92,4 +96,4 @@ def delete_note(request: HttpRequest):
         note_repo.delete_by_id(kwargs["id"])
         return JsonResponse({"message": "note deleted"}, status=200)
     except Exception as ex:
-        return JsonResponse({"error": str(ex)}, status=400)
+        return JsonResponse({"error": str(ex)}, status=500)

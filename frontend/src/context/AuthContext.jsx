@@ -8,7 +8,7 @@ export function AuthProvider({ children }) {
 
   const checkAuth = async () => {
     try {
-      const resp = await fetch("http://localhost:8000/api/check", {
+      const resp = await fetch("http://localhost:8000/api/check/", {
         credentials: "include",
       });
       if (resp.ok) {
