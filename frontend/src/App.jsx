@@ -4,7 +4,7 @@ import viteLogo from "/vite.svg";
 import "./App.css";
 import { Route, Routes, Link } from "react-router-dom";
 import { SignUpPage, LoginPage } from "./components/LoginPages/Pages";
-import { MainPage } from "./components/MainPage";
+import { MainPage } from "./components/MainPage/Page";
 import { AuthProvider } from "./context/AuthContext";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 
