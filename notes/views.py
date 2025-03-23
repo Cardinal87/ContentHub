@@ -60,7 +60,7 @@ async def authorize(request: HttpRequest):
 @require_POST
 def logout_user(request: HttpRequest):
     logout(request)
-    return JsonResponse({"message": "successed"}, status=200)
+    return JsonResponse({"message": "user loged out"}, status=200)
 
 
 #api method for creating notes
@@ -75,8 +75,8 @@ def create_note(request: HttpRequest):
         text = kwargs["text"]
         user = request.user
         note_repo = NoteRepo()
-        note_repo.create(name = name, text = text, user = user)
-        return JsonResponse({"error": "note added"}, status=200)
+        new_note = note_repo.create(name = name, text = text, user = user)
+        return JsonResponse({"message": "note added", "id": new_note.id}, status=200)
     except Exception as ex:
         return JsonResponse({"error": str(ex)}, status=500)
 
@@ -95,5 +95,35 @@ def delete_note(request: HttpRequest):
 
         note_repo.delete_by_id(kwargs["id"])
         return JsonResponse({"message": "note deleted"}, status=200)
+    except Exception as ex:
+        return JsonResponse({"error": str(ex)}, status=500)
+    
+
+@require_GET
+def get_notes(request: HttpRequest):
+    try:
+        if not request.user.is_authenticated:
+            return JsonResponse({"error": "unauthorized"}, status=401)
+        note_repo = NoteRepo()
+        notes = list(note_repo.get_user_notes(request.user).values())
+        return JsonResponse(notes, status=200, safe=False)
+    except Exception as ex:
+        return JsonResponse({"error": str(ex)}, status=500)
+
+@require_POST
+def update_note(request: HttpRequest):
+    try:
+        if not request.user.is_authenticated:
+            return JsonResponse({"error": "unauthorized"}, status=401)
+        note_repo = NoteRepo()
+        decoded = request.body.decode()
+        kwargs = json.loads(decoded)
+        name = kwargs["name"]
+        text = kwargs["text"]
+        note = note_repo.get_by_id(kwargs["id"])
+        if note.user != request.user:
+            return JsonResponse({"error": "permission denied"}, status=403)
+        note_repo.update(note, name=name, text=text)
+        return JsonResponse({"message": "note updated"}, status=200)
     except Exception as ex:
         return JsonResponse({"error": str(ex)}, status=500)

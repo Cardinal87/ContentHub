@@ -4,8 +4,9 @@ import viteLogo from "/vite.svg";
 import "./App.css";
 import { Route, Routes, Link } from "react-router-dom";
 import { SignUpPage, LoginPage } from "./components/LoginPages/Pages";
-import { MainPage } from "./components/MainPage";
+import { MainPage } from "./components/MainPage/Page";
 import { AuthProvider } from "./context/AuthContext";
+import { NotesProvider } from "./context/NotesContext";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 
 function App() {
@@ -17,7 +18,9 @@ function App() {
             path="/"
             element={
               <ProtectedRoute>
-                <MainPage />
+                <NotesProvider>
+                  <MainPage />
+                </NotesProvider>
               </ProtectedRoute>
             }
           />

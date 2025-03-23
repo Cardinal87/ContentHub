@@ -39,7 +39,7 @@ class UserRepo():
 #CRUD operations for Note
 class NoteRepo():
     allowed_attrs = ["text", "name"]
-    def create(self, kwargs):
+    def create(self, **kwargs):
         note = Note.objects.create(
             name=kwargs.get("name"),
             text=kwargs.get("text"),
@@ -59,7 +59,7 @@ class NoteRepo():
     def delete_by_id(self, id: int):
         Note.objects.get(id=id).delete()
 
-    def update(self, note: Note, kwargs):
+    def update(self, note: Note, **kwargs):
         for key, value in kwargs.items():
             if key not in self.allowed_attrs:
                 raise ValueError(f"{key} attribute is not allowed to change")

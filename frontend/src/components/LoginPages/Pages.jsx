@@ -43,7 +43,7 @@ export function LoginPage() {
   }
 
   return (
-    <div className="container h-max flex flex-col justify-center mb-60">
+    <div className="container h-max flex flex-col justify-center mb-[20%]">
       <Header />
       <DataInput
         id={"login"}
@@ -129,7 +129,7 @@ export function SignUpPage() {
 
   const navigate = useNavigate();
   return (
-    <div className="container h-max flex flex-col justify-center mb-60">
+    <div className="container h-max flex flex-col justify-center mb-[20%]">
       <Header />
       <DataInput
         id={"login"}
