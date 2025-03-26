@@ -9,12 +9,11 @@ from django.shortcuts import redirect, render
 from django.db import IntegrityError
 from asgiref.sync import sync_to_async
 import json
-from .assistant.rag_assistant import get_answer
 
 #checking authorization
 def check_auth(request: HttpRequest):
     if request.user.is_authenticated:
-        return JsonResponse({"message": "authenticated"}, status=200)
+        return JsonResponse({"message": "authenticated", "id": request.user.id}, status=200)
     else:
         return JsonResponse({"error": "unauthorized"}, status=401)
 
@@ -128,17 +127,4 @@ def update_note(request: HttpRequest):
     except Exception as ex:
         return JsonResponse({"error": str(ex)}, status=500)
     
-@require_GET
-def get_rag_answer(request: HttpRequest):
-    try:
-        if not request.user.is_authenticated:
-            return JsonResponse({"error": "unauthorized"}, status=401)
-        note_repo = NoteRepo()
-        decoded = request.body.decode()
-        kwargs = json.loads(decoded)
-        note_repo = NoteRepo()
-        notes = list(note_repo.get_user_notes(request.user).values())
-        answer = get_answer(kwargs["query"], notes)
-        return JsonResponse({"answer": answer}, status=200)
-    except Exception as ex:
-        return JsonResponse({"error": str(ex)}, status=500)
+

@@ -94,10 +94,10 @@ cover/
 *.pot
 
 # Django stuff:
-*.log
-local_settings.py
-db.sqlite3
-db.sqlite3-journal
+core_django/*.log
+core_django/local_settings.py
+core_django/db.sqlite3
+core_django/db.sqlite3-journal
 
 # Flask stuff:
 instance/
@@ -213,3 +213,4 @@ cython_debug/
 
 #vector storages 
 chroma_db/
+**/qdrant
