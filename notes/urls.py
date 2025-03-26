@@ -10,7 +10,8 @@ urlpatterns = [
     path("api/deletenote/", views.delete_note, name="delete_note"),
     path("api/createnote/", views.create_note, name="create_note"),
     path("api/getnotes/", views.get_notes, name="get_notes"),
-    path('api/updatenote/', views.update_note, name="update_note")
+    path('api/updatenote/', views.update_note, name="update_note"),
+    path('api/getanswer/', views.get_rag_answer)
     
 
 ]
