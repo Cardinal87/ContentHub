@@ -1,11 +1,9 @@
-from fastapi import FastAPI, Request, Body
+from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
-import requests
 import os
 from dotenv import load_dotenv
-from .assistant.rag_assistant import process
+from .assistant.rag_service import rag_service
 import httpx
-from contextlib import asynccontextmanager
 import json
 
 
@@ -34,15 +32,32 @@ async def get_answer(request: Request):
         response = await http_client.get('api/check/', cookies = cookies)
         
         data = await request.json()
+        django_data = response.json()
         if response.status_code == 200:
-            notes_resp = await http_client.get('api/getnotes/', cookies = cookies)
-            if notes_resp.status_code == 200:
-               notes = notes_resp.json()
-               answer = process(data['query'], notes)
-               return JSONResponse({"answer": answer}, status_code=200)
+            answer = await rag_service.process(data['query'], django_data['id'])
+            return JSONResponse({"answer": answer}, status_code=200)
 
 
         elif response.status_code == 500:
            return JSONResponse({"error": "django server is not availible"}, status_code=500)
+    except Exception as ex:
+     return JSONResponse({"error": str(ex)}, status_code=500)
+
+
+@app.post('/chat/savevector/')
+async def save_vector(request: Request):
+    try:
+        data = await request.json()
+        await rag_service.save_to_vector_storage(data['note'])
+        return JSONResponse({"message": "vector saved"}, status_code=200)
+    except Exception as ex:
+     return JSONResponse({"error": str(ex)}, status_code=500)
+
+@app.post('/chat/deletevector/')
+async def delete_vector(request: Request):
+    try:
+        data = await request.json()
+        await rag_service.delete_from_vector_storage(ids=[data['note_id']])
+        return JSONResponse({"message": "vector deleted"}, status_code=200)
     except Exception as ex:
      return JSONResponse({"error": str(ex)}, status_code=500)
