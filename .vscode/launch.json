@@ -16,8 +16,13 @@
       "name": "Python Debugger: Django",
       "type": "debugpy",
       "request": "launch",
-      "program": "${workspaceFolder}\\core_django\\manage.py",
-      "args": ["runserver"],
+      "module": "uvicorn",
+      "args": [
+        "core_django.server.asgi:application",
+        "--reload",
+        "--port",
+        "8000"
+      ],
       "django": true
     }
   ]
