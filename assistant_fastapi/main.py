@@ -23,20 +23,25 @@ app = FastAPI(lifespan=lifespan)
 
 
 
-@app.get('/chat/getanswer/')
+@app.get('/api/v1/chat/rag/answer')
 async def get_answer(request: Request):
     try:
         http_client: httpx.AsyncClient = request.app.state.http_client
         os.getenv('DJANGO_CORE_URL')
         cookies = request.cookies
-        response = await http_client.get('api/check/', cookies = cookies)
+        csrf_token = request.headers.get('X-CSRFToken')
+        response = await http_client.get('/api/v1/auth/status/', cookies = cookies, headers={
+           "X-CSRFToken": csrf_token
+        })
         
-        data = await request.json()
-        django_data = response.json()
         if response.status_code == 200:
+            
+            data = await request.json()
+            django_data = response.json()
             answer = await rag_service.process(data['query'], django_data['id'])
             return JSONResponse({"answer": answer}, status_code=200)
-
+        elif response.status_code == 401:
+           return JSONResponse({"error": "unauthorized"}, status_code=401)
 
         elif response.status_code == 500:
            return JSONResponse({"error": "django server is not availible"}, status_code=500)
@@ -44,7 +49,7 @@ async def get_answer(request: Request):
      return JSONResponse({"error": str(ex)}, status_code=500)
 
 
-@app.post('/chat/savevector/')
+@app.post('/api/v1/chat/rag/storage')
 async def save_vector(request: Request):
     try:
         data = await request.json()
@@ -53,11 +58,11 @@ async def save_vector(request: Request):
     except Exception as ex:
      return JSONResponse({"error": str(ex)}, status_code=500)
 
-@app.post('/chat/deletevector/')
+@app.delete('/api/v1/chat/rag/storage')
 async def delete_vector(request: Request):
     try:
         data = await request.json()
-        await rag_service.delete_from_vector_storage(ids=[data['note_id']])
+        await rag_service.delete_from_vector_storage(ids=data['note_ids'])
         return JSONResponse({"message": "vector deleted"}, status_code=200)
     except Exception as ex:
      return JSONResponse({"error": str(ex)}, status_code=500)

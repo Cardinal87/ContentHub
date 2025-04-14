@@ -6,7 +6,7 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain.chains.retrieval import create_retrieval_chain
 from langchain_core.runnables.base import Runnable
-from qdrant_client.models import Distance, VectorParams
+from qdrant_client.models import Distance, VectorParams, Filter, FieldCondition, MatchValue, PayloadSchemaType
 from langchain_core.documents import Document
 import os
 
@@ -30,8 +30,13 @@ class Rag_Service:
         if not client.collection_exists(collection_name):
             client.create_collection(
                 collection_name=collection_name,
-                vectors_config=VectorParams(size=1024, distance=Distance.COSINE))
-
+                vectors_config=VectorParams(size=1024, distance=Distance.COSINE),
+            )
+            client.create_payload_index(
+                collection_name=collection_name,
+                field_name="user_id",
+                field_schema=PayloadSchemaType.INTEGER
+            )
         vector_store = QdrantVectorStore.from_existing_collection(
                 embedding=embedding_model,
                 collection_name=collection_name,
@@ -75,8 +80,16 @@ class Rag_Service:
     
     def get_qa(self, user_id) -> Runnable:
         vectore_store = self._vector_store
+        filters = Filter(
+            must=[
+                FieldCondition(
+                    key='metadata.user_id',
+                    match=MatchValue(value=user_id)
+                )
+            ]
+        )
         retriever = vectore_store.as_retriever(
-            search_kwargs={'filter': {'user_id': user_id}}
+            search_kwargs={'filter': filters}
         )
         combined_chain = self._combined_chain
         qa = create_retrieval_chain(
@@ -95,7 +108,7 @@ class Rag_Service:
         return answer['answer']
 
 
-    async def save_to_vector_storage(self, note: str):
+    async def save_to_vector_storage(self, note: dict):
 
         doc = Document(
             page_content=note['text'],
