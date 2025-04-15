@@ -53,8 +53,8 @@ async def get_answer(request: Request):
 async def save_vector(request: Request):
     try:
         data = await request.json()
-        await rag_service.save_to_vector_storage(data['note'])
-        return JSONResponse({"message": "vector saved"}, status_code=200)
+        uuid = await rag_service.save_to_vector_storage(data['note'])
+        return JSONResponse({"message": "vector saved", "uuid": uuid}, status_code=200)
     except Exception as ex:
      return JSONResponse({"error": str(ex)}, status_code=500)
 
@@ -66,3 +66,14 @@ async def delete_vector(request: Request):
         return JSONResponse({"message": "vector deleted"}, status_code=200)
     except Exception as ex:
      return JSONResponse({"error": str(ex)}, status_code=500)
+    
+@app.put('/api/v1/chat/rag/storage')
+async def update_vector(request: Request):
+    try:
+        data = await request.json()
+        await rag_service.update_vector(data['note'])
+        return JSONResponse({"message": "vector updated"}, status_code=200)
+    except ValueError as ex:
+       return JSONResponse({"error": str(ex)}, status_code=400)
+    except Exception as ex:
+      return JSONResponse({'error': str(ex)}, status_code=500)
