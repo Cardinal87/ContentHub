@@ -19,6 +19,8 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class NoteSerializer(serializers.ModelSerializer):
+    vector_uuid = drf_serializers.UUIDField(required=False)
+    
     class Meta:
         model = Note
         fields = "__all__"

@@ -9,6 +9,8 @@ from rest_framework.decorators import action
 from asgiref.sync import sync_to_async
 from .serializers import UserSerializer, NoteSerializer, PasswordSerializer
 from .models import Note
+import httpx
+import os
 from django.contrib.auth.models import User
 
 
@@ -178,9 +180,37 @@ class NotesViewSet(ViewSet):
         try:
             serializer = NoteSerializer(data={**request.data, "user" : request.user.id})
             await sync_to_async(serializer.is_valid)(raise_exception=True)
-            await serializer.asave()
-            note = await serializer.adata
-            return Response({"message": "note added", "id": note['id']}, status=status.HTTP_200_OK)
+            note = await serializer.asave()
+            note_data = await serializer.adata
+            
+            url = os.getenv('AI_RAG_URL')
+            async with httpx.AsyncClient(base_url=url) as client:
+                response = await client.post(
+                    url='/api/v1/chat/rag/storage', 
+                    json={
+                        'note':{
+                            'text': note_data['text'],
+                            'name': note_data['name'],
+                            'user_id': request.user.id
+                        }
+                    }
+                    )
+
+                if response.status_code == 200:
+                    data = response.json();
+                    uuid = data['uuid']
+                    note.vector_uuid = uuid
+                    await note.asave()
+
+                elif response.status_code == 400:
+                    data = response.json()
+                    return Response({"error": data['error']}, status=status.HTTP_400_BAD_REQUEST)
+                elif response.status_code == 500:
+                    data = response.json()
+                    return Response({"error": data['error']}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+
+            return Response({"message": "note added", "id": note.id}, status=status.HTTP_201_CREATED)
         except Exception as ex:
             return Response({"error": str(ex)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 

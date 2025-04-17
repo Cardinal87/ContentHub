@@ -9,9 +9,8 @@ from langchain_core.runnables.base import Runnable
 from qdrant_client.models import Distance, VectorParams, Filter, FieldCondition, MatchValue, PayloadSchemaType
 from langchain_core.documents import Document
 from asgiref.sync import sync_to_async
-import uuid
 import os
-
+import uuid
 
 class Rag_Service:
     
@@ -82,6 +81,11 @@ class Rag_Service:
     
     
     def get_qa(self, user_id) -> Runnable:
+        
+        """
+        return qa chain
+        """
+        
         vectore_store = self._vector_store
         filters = Filter(
             must=[
@@ -106,33 +110,53 @@ class Rag_Service:
         return self._vector_store
 
     async def process(self, query, user_id):
+        
+        """
+        returns result of qa chain
+        """
+        
         qa = self.get_qa(user_id=user_id)
         answer = await qa.ainvoke({"input": query})
         return answer['answer']
 
 
     async def save_to_vector_storage(self, note: dict):
+        
+        """
+        save vector to qdrant store
+        """
+
 
         doc = Document(
             page_content=note['text'],
             metadata={'name': note['name'], 
                     'user_id': note['user_id']}
         )
+        uuid4 = str(uuid.uuid4())
         vector_store = self._vector_store
-        id = str(uuid.uuid4())
         await vector_store.aadd_documents(
             documents=[doc],
-            ids=[id],
+            ids=[uuid4],
             batch_size = 1
         )
-        return id
+        return uuid4
 
     async def delete_from_vector_storage(self, ids: list):
+        
+        """
+        delete vector from qdrant store
+        """
+        
         vector_store = self._vector_store
         await vector_store.adelete(ids=ids)
 
 
     async def update_vector(self, note: dict):
+        
+        """
+        update vectro in qdrant store
+        """
+        
         client = self._vector_store._client
         name = self._vector_store.collection_name
 
