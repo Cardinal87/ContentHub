@@ -3,6 +3,7 @@ from fastapi.responses import JSONResponse
 import os
 from dotenv import load_dotenv
 from .assistant.rag_service import rag_service
+import fastapi.middleware.cors as cors
 import httpx
 import json
 
@@ -17,14 +18,26 @@ async def lifespan(app):
     await app.state.http_client.aclose()
 
 
-
 app = FastAPI(lifespan=lifespan)
-    
 
+
+    
+app.add_middleware(
+   cors.CORSMiddleware,
+   allow_origins=[os.getenv('DJANGO_CORE_URL'), os.getenv('VITE_REACT_URL')],
+   allow_methods=['*'],
+   allow_headers=['*'],
+   allow_credentials=True
+)
 
 
 @app.get('/api/v1/chat/rag/answer')
 async def get_answer(request: Request):
+    
+    """
+    get rag assistant answer
+    """
+    
     try:
         http_client: httpx.AsyncClient = request.app.state.http_client
         os.getenv('DJANGO_CORE_URL')
@@ -49,17 +62,28 @@ async def get_answer(request: Request):
      return JSONResponse({"error": str(ex)}, status_code=500)
 
 
+
 @app.post('/api/v1/chat/rag/storage')
 async def save_vector(request: Request):
+    
+    """
+    adding note to vector storage
+    """
+    
     try:
         data = await request.json()
         uuid = await rag_service.save_to_vector_storage(data['note'])
-        return JSONResponse({"message": "vector saved", "uuid": uuid}, status_code=200)
+        return JSONResponse({"message": "vector saved", 'uuid': uuid}, status_code=200)
     except Exception as ex:
      return JSONResponse({"error": str(ex)}, status_code=500)
 
 @app.delete('/api/v1/chat/rag/storage')
 async def delete_vector(request: Request):
+    
+    """
+    delete vector from vector storage
+    """
+    
     try:
         data = await request.json()
         await rag_service.delete_from_vector_storage(ids=data['note_ids'])
@@ -69,6 +93,11 @@ async def delete_vector(request: Request):
     
 @app.put('/api/v1/chat/rag/storage')
 async def update_vector(request: Request):
+    
+    """
+    update vector in vector storage
+    """
+    
     try:
         data = await request.json()
         await rag_service.update_vector(data['note'])
@@ -77,3 +106,5 @@ async def update_vector(request: Request):
        return JSONResponse({"error": str(ex)}, status_code=400)
     except Exception as ex:
       return JSONResponse({'error': str(ex)}, status_code=500)
+    
+
