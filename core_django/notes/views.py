@@ -223,8 +223,28 @@ class NotesViewSet(ViewSet):
         
         try:
             instance = await Note.objects.aget(id=pk, user=request.user)
-            await instance.adelete()
-            return Response({"message": "note deleted"}, status=status.HTTP_200_OK)
+            
+            url = os.getenv('AI_RAG_URL')
+            uuid = str(instance.vector_uuid)  
+            async with httpx.AsyncClient(base_url=url) as client:
+                response = await client.request(
+                    method='DELETE',
+                    url='/api/v1/chat/rag/storage', 
+                    json={
+                        'note_ids':[
+                            uuid                          
+                        ]
+                    }
+                    )
+
+                if response.status_code == 200:
+                    await instance.adelete()
+                    return Response({"message": "note deleted"}, status=status.HTTP_200_OK)
+                elif response.status_code == 400:
+                    data = response.json()
+                    return Response({"error": data['error']}, status=status.HTTP_400_BAD_REQUEST)
+                
+            return Response({"error": data['error']}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         except Note.DoesNotExist as ex:
             return Response({"error": "permission denied or not found"}, status=403)
         except Exception as ex:
@@ -253,10 +273,32 @@ class NotesViewSet(ViewSet):
 
         try:
             instance = await Note.objects.aget(id=pk, user=request.user)
-            serializer = NoteSerializer(data={**request.data, "user": request.user.id}, instance = instance)
+            serializer = NoteSerializer(data={**request.data, "user": request.user.id, 'vector_uuid': instance.vector_uuid}, instance = instance)
             await sync_to_async(serializer.is_valid)(raise_exception=True)
             await serializer.asave()
-            return Response({"message": "note updated"}, status=status.HTTP_200_OK)
+            note_data = await serializer.adata
+            url = os.getenv('AI_RAG_URL')
+            async with httpx.AsyncClient(base_url=url) as client:
+                response = await client.request(
+                    method='PUT',
+                    url='/api/v1/chat/rag/storage', 
+                    json={
+                        'note':{
+                            'text': note_data['text'],
+                            'name': note_data['name'],
+                            'uuid': note_data['vector_uuid'],
+                            'user_id': request.user.id               
+                        }
+                    }
+                    )
+
+                if response.status_code == 200:
+                    return Response({"message": "note updated"}, status=status.HTTP_200_OK)
+                elif response.status_code == 400:
+                    data = response.json()
+                    return Response({"error": data['error']}, status=status.HTTP_400_BAD_REQUEST)
+                
+            return Response({"error": data['error']}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         except Note.DoesNotExist as ex:
             return Response({"error": "permission denied or not found"}, status=403)
         except Exception as ex:

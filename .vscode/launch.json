@@ -9,7 +9,7 @@
       "type": "debugpy",
       "request": "launch",
       "module": "uvicorn",
-      "args": ["assistant_fastapi.main:app", "--reload", "--port", "7999"],
+      "args": ["assistant_fastapi.main:app", "--port", "7999"],
       "jinja": true
     },
     {
