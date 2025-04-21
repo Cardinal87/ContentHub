@@ -60,8 +60,26 @@ class UsersViewSet(ViewSet):
 
         try:
             user = request.user
-            await user.adelete()
-            return Response({"message": "user deleted"}, status=status.HTTP_200_OK)
+            user_notes = await sync_to_async(list)(Note.objects.filter(user=user))
+            uuids = [str(note.vector_uuid) for note in user_notes]
+            url = os.getenv('AI_RAG_URL')
+            async with httpx.AsyncClient(base_url=url) as client:
+                response = await client.request(
+                    method='DELETE',
+                    url='/api/v1/chat/rag/storage', 
+                    json={
+                        'note_ids': uuids
+                    }
+                    )
+
+                if response.status_code == 200:
+                    await user.adelete()
+                    return Response({"message": "user deleted"}, status=status.HTTP_200_OK)
+                elif response.status_code == 400:
+                    data = response.json()
+                    return Response({"error": data['error']}, status=status.HTTP_400_BAD_REQUEST)
+                
+            return Response({"error": data['error']}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         except user.DoesNotExist as ex:
             return Response({"error": "user does not exist"}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as ex:
